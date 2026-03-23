@@ -1,11 +1,7 @@
 ﻿using System;
-using System.Drawing;
-using System.Numerics;
-using System.Collections.Generic;
-using System.Linq;
 using RedUtils.Math;
-using RLBotDotNet;
-
+using RLBot.Flat;
+using RLBot.Manager;
 /* 
  * This file extends the RUBot class with some extra tools that make bot creation easier.
  * You probably won't want to edit to much in here, except the ShotCheck functions.
@@ -109,6 +105,31 @@ namespace RedUtils
 					if (doubleJumpShot.IsValid(Me))
 					{
 						return doubleJumpShot;
+					}
+				}
+			}
+
+			return null; // if none of those work, we'll just return null (meaning no shot was found)
+		}
+		public Shot TestShotCheck(BallSlice slice, Target target)
+		{
+			if (slice != null) // Check if the slice even exists
+			{
+				float timeRemaining = slice.Time - Game.Time;
+
+				// Check first if the slice is in the future and if it's even possible to shoot at our target
+				if (timeRemaining > 0 && target.Fits(slice.Location))
+				{
+					Ball ballAfterHit = slice.ToBall();
+					Vec3 carFinVel = ((slice.Location - Me.Location) / timeRemaining).Cap(0, Car.MaxSpeed);
+					ballAfterHit.velocity = carFinVel + slice.Velocity.Flatten(carFinVel.Normalize()) * 0.8f;
+					Vec3 shotTarget = target.Clamp(ballAfterHit);
+
+					// First, check if we can aerial
+					FlipReset resetShot = new FlipReset(Me, slice, shotTarget);
+					if (resetShot.IsValid(Me))
+					{
+						return resetShot; // If so, go for it!
 					}
 				}
 			}

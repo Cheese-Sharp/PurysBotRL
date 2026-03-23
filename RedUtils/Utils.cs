@@ -110,5 +110,30 @@ namespace RedUtils
 			}
 			return Lerp((value - Car.MaxSpeed) / 4600, 0.55f, 0.3f);
 		}
+		public static Car GetClosestEnemy(RUBot Me, Vec3 location)
+		{
+			Car closetCar = null;
+			float closestDist = 999999;
+			foreach (Car opponent in Me.LivingOpponents)
+			{
+				float opponentDist = opponent.Location.Dist(location);
+				if (opponentDist < closestDist)
+				{
+					closestDist = opponentDist;
+					closetCar = opponent;
+				}
+			}
+			return closetCar;
+		}
+		public static Vec3[] BallPathPoints(RUBot bot)
+		{
+			BallSlice[] slices = Ball.Prediction.Slices;
+			Vec3[] ballPositions = new Vec3[slices.Length];
+			for (int i = 0; i < slices.Length; i++)
+			{
+				ballPositions[i] = slices[i].Location;
+			}
+			return ballPositions;
+		}
 	}
 }

@@ -9,7 +9,7 @@ using System.Drawing;
 using System.Linq;
 using System.Numerics;
 using RedUtils.Math;
-using RLBotDotNet.Renderer;
+using RLBot.Manager;
 
 namespace RedUtils
 {
@@ -26,53 +26,58 @@ namespace RedUtils
         /// <summary>Reference to the default renderer</summary>
         private readonly Renderer _renderer;
 
+        /// <summary>Used to scale 2D rendering appropriately</summary>
+        private readonly float _screenWidthScale, _screenHeightScale;
+
         /// <summary>Initialize an ExtendedRenderer using the given Renderer</summary>
-        public ExtendedRenderer(Renderer renderer)
+        public ExtendedRenderer(Renderer renderer, float screenWidth = 1f, float screenHeight = 1f)
         {
             _renderer = renderer;
+            _screenWidthScale = 1f / screenWidth;
+            _screenHeightScale = 1f / screenHeight;
         }
 
         /// <summary>Draws text in screenspace</summary>
-        public void Text2D(string text, Vec3 upperLeft, int scale = 1, Color? color = null)
+        public void Text2D(string text, Vec3 upperLeft, float scale = 1, Color? color = null)
         {
-            _renderer.DrawString2D(text, color ?? Color, NumVec2(upperLeft), scale, scale);
+            _renderer.DrawText2D(text, upperLeft.x * _screenWidthScale, upperLeft.y * _screenHeightScale, scale, color ?? Color);
         }
 
         /// <summary>Draws text at a point in world space</summary>
-        public void Text3D(string text, Vec3 pos, int scale = 1, Color? color = null)
+        public void Text3D(string text, Vec3 pos, float scale = 1, Color? color = null)
         {
-            _renderer.DrawString3D(text, color ?? Color, NumVec(pos), scale, scale);
+            _renderer.DrawText3D(text, NumVec(pos), scale, color ?? Color);
         }
 
         /// <summary>Draws a rectangle at a point in world space</summary>
         public void Rect3D(Vec3 pos, int width, int height, bool fill = true, Color? color = null)
         {
-            _renderer.DrawRectangle3D(color ?? Color, NumVec(pos), width, height, fill);
+            _renderer.DrawRect3D(NumVec(pos), width * _screenWidthScale, height * _screenHeightScale, color ?? Color);
         }
 
         /// <summary>Draws a line in world space</summary>
         public void Line3D(Vec3 start, Vec3 end, Color? color = null)
         {
-            _renderer.DrawLine3D(color ?? Color, NumVec(start), NumVec(end));
+            _renderer.DrawLine3D(NumVec(start), NumVec(end), color ?? Color);
         }
 
         /// <summary>Draws a line in screenspace</summary>
-        public void Line2D(Vec3 start, Vec3 end, Color? color = null)
-        {
-            _renderer.DrawLine2D(color ?? Color, NumVec2(start), NumVec2(end));
-        }
+        //public void Line2D(Vec3 start, Vec3 end, Color? color = null)
+        //{
+        //    _renderer.DrawLine2D(color ?? Color, NumVec2(start), NumVec2(end));
+        //}
 
         /// <summary>Draws a line in world space consisting between each pair of points in the given array</summary>
         public void Polyline3D(IEnumerable<Vec3> points, Color? color = null)
         {
-            _renderer.DrawPolyLine3D(color ?? Color, points.Select(NumVec).ToArray());
+            _renderer.DrawPolyLine3D(points.Select(NumVec).ToArray(), color ?? Color);
         }
 
         /// <summary>Draws a line in screen space consisting between each pair of points in the given array</summary>
-        public void Polyline2D(IEnumerable<Vec3> points, Color? color = null)
-        {
-            _renderer.DrawPolyLine2D(color ?? Color, points.Select(NumVec2).ToArray());
-        }
+        //public void Polyline2D(IEnumerable<Vec3> points, Color? color = null)
+        //{
+        //    _renderer.DrawPolyLine2D(points.Select(NumVec2).ToArray(), color ?? Color);
+        //}
 
         /// <summary>Draws a circle</summary>
         public void Circle(Vec3 pos, Vec3 normal, float radius, Color? color = null)
@@ -181,12 +186,6 @@ namespace RedUtils
         private Vector3 NumVec(Vec3 v)
         {
             return new Vector3(v.x, v.y, v.z);
-        }
-        
-        /// <summary>Helper function to convert a Vec3 to a Vector2</summary>
-        private Vector2 NumVec2(Vec3 v)
-        {
-            return new Vector2(v.x, v.y);
         }
     }
 }

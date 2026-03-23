@@ -1,8 +1,8 @@
-﻿using System;
-using System.Linq;
+﻿using RedUtils.Math;
+using RLBot.Flat;
+using System;
 using System.Collections.Generic;
-using rlbot.flat;
-using RedUtils.Math;
+using System.Linq;
 
 namespace RedUtils
 {
@@ -84,36 +84,33 @@ namespace RedUtils
 		}
 
 		/// <summary>Initializes the boost pads with data from the FieldInfo struct, provided by our bot</summary>
-		public static void Initialize(FieldInfo fieldInfo)
+		public static void Initialize(FieldInfoT fieldInfo)
 		{
-			for (int i = 0; i < fieldInfo.BoostPadsLength; i++)
-			{
-				if (fieldInfo.BoostPads(i).HasValue)
-				{
-					Boosts.Add(new Boost(i, fieldInfo.BoostPads(i).Value));
-				}
-				else
-				{
-					// Sometimes the bot isn't given the boost pads initially, but we still want to initialize them all in case they become avaliable again
-					Boosts.Add(new Boost(i));
-				}
-			}
-		}
+            for (int i = 0; i < fieldInfo.BoostPads.Count; i++)
+            {
+                if (fieldInfo.BoostPads[i] != null)
+                {
+                    Boosts.Add(new Boost(i, fieldInfo.BoostPads[i]));
+                }
+                else
+                {
+                    // Sometimes the bot isn't given the boost pads initially, but we still want to initialize them all in case they become avaliable again
+                    Boosts.Add(new Boost(i));
+                }
+            }
+        }
 
-		/// <summary>Updates the boost pads with data from the packet</summary>
-		public static void Update(GameTickPacket packet)
-		{
-			for (int i = 0; i < packet.BoostPadStatesLength; i++)
-			{
-				if (packet.BoostPadStates(i).HasValue)
-				{
-					Boosts[i].Update(packet.BoostPadStates(i).Value);
-				}
-			}
-		}
+        /// <summary>Updates the boost pads with data from the packet</summary>
+        public static void Update(GamePacketT packet)
+        {
+            for (int i = 0; i < packet.BoostPads.Count; i++)
+            {
+                Boosts[i].Update(packet.BoostPads[i]);
+            }
+        }
 
-		/// <summary>Returns the side of the field which belongs to the team given. (-1 for blue, 1 for orange)</summary>
-		public static int Side(int team)
+        /// <summary>Returns the side of the field which belongs to the team given. (-1 for blue, 1 for orange)</summary>
+        public static int Side(int team)
 		{
 			return 2 * team - 1;
 		}

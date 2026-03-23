@@ -156,7 +156,8 @@ namespace RedUtils
 					{
 						if (TargetSpeed > 100 + forwardSpeed)
 						{
-							// When we're moving forward, and need extra speed, look for dodges, speedflips, and wavedashes
+							// When we're moving forward, and need extra speed, look for dodges, speedflips, and
+							// es
 							if (bot.Me.Location.z < 200 && bot.Me.IsGrounded && carSpeed > 1000 && bot.Me.Forward.FlatAngle(bot.Me.Location.Direction(finalTarget)) < 0.1f && timeOnGround > 0.2f)
 							{
 								// If we are on the ground, we rule out wavedashes, and look at dodges

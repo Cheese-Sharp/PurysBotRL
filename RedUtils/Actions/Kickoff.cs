@@ -1,9 +1,12 @@
 using System;
 using RedUtils.Math;
+using RLBot.Manager;
 
 namespace RedUtils
 {
-	/// <summary>A kickoff action, which performs a speedflip kickoff</summary>
+	/// <summary>A kickoff action, which performs a 
+	/// 
+	/// kickoff</summary>
 	public class Kickoff : IAction
 	{
 		/// <summary>Kickoffs aren't interruptible, so this will always be false</summary>
@@ -73,8 +76,16 @@ namespace RedUtils
 				}
 				else if (bot.Me.Location.Dist(Ball.Location) < 800 && _timeOnGround > 0.1f)
 				{
-					// When we are close enough to the ball, dodge into it
-					bot.Action = new Dodge(Ball.Location.Direction(bot.TheirGoal.Location), 0.18f);
+					if(Utils.GetClosestEnemy(bot, Ball.Location).Location.Dist(Ball.Location) > 800f)
+					{
+						// If they are faking or delaying kickoff, take posession
+						Finished = true;
+					}
+					else
+					{
+						// When we are close enough to the ball, dodge into it
+						bot.Action = new Dodge(Ball.Location.Direction(bot.TheirGoal.Location), 0.18f);
+					}
 				}
 			}
 		}
