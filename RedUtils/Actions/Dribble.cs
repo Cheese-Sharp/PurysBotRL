@@ -31,8 +31,10 @@ namespace RedUtils
 		float updateTargetDur = 0.1f, updateTargetTimer = 999;
 		bool arrivedAtTarget = false;
 		bool isDribbling = false;
+		bool isCatching = false;
 		int successfulArrives = 0;
 		float predBallTime = 0;
+		float dribbleSpeedUp = 5f;
 		/// <summary>Initializes a new Dribble Action/// </summary>
 		public Dribble(Car car) 
 		{
@@ -46,6 +48,8 @@ namespace RedUtils
 		public void Run(RUBot bot) 
 		{
 			// Cancel dribble if bla bla bla
+			bool behindBall = bot.Me.Location.Dist(bot.TheirGoal.Location) - Ball.Location.Dist(bot.TheirGoal.Location) > -1000;
+			Interruptible = false;
 
 			if ((DribbleTarget - bot.Me.Location).Length() < 120f)
 			{
@@ -80,32 +84,37 @@ namespace RedUtils
 			}
 
 			Vec3 toNetDir = bot.TheirGoal.Location - bot.Me.Location;
-			Vec3 toBallDir = Ball.Location.Flatten() - bot.Me.Location.Flatten();
+			Vec3 toBallDir = bot.Me.Location.FlatDirection(Ball.Location);
 			if (isDribbling)
 			{
 				// hard to stop dribbling
-				isDribbling = (100 < Ball.Location.z && Ball.Location.z < 250) && MathF.Abs(Ball.Velocity.z) < 135 && toBallDir.Length() < 150f;
+				isDribbling = (100 < Ball.Location.z && Ball.Location.z < 750) && MathF.Abs(Ball.Velocity.z) < 1000 && toBallDir.Length() < 125f;
 			}
 			else
 			{
 				// hard to start dribbling
-				isDribbling = (120 < Ball.Location.z && Ball.Location.z < 200) && MathF.Abs(Ball.Velocity.z) < 125 && toBallDir.Length() < 100f;
+				bool curBallIsCentered = Ball.Location.FlatDist(bot.Me.Location) < 50;
+				bool curBallDribbled = (120 < Ball.Location.z && Ball.Location.z < 150);
+				bool futureBallDribbled = (120 < Ball.Prediction.Slices[20].Location.z && Ball.Prediction.Slices[20].Location.z < 150);
+				isDribbling = curBallIsCentered && (curBallDribbled && futureBallDribbled && MathF.Abs(Ball.Velocity.z) < 125 && toBallDir.Length() < 100f);
 			}
 
 
 			Vec3 toTarget = DribbleTarget - bot.Me.Location;
 			bot.Renderer.Line3D(DribbleTarget, DribbleTarget + Vec3.Up * (50 + waitTimer), System.Drawing.Color.LightCyan);
 
-			bot.Renderer.Text2D($"Ball z:{Ball.Location.z}, vel: {Ball.Velocity.z}, arr: {arrivedAtTarget}", new Vec3(0, 70), 2, isDribbling ? System.Drawing.Color.Green : System.Drawing.Color.Yellow);
+			bot.Renderer.Text2D($"drib: {-Utils.Cap(dribbleSpeedUp / (2f), 0, 70)}", new Vec3(0, 70), 2, isDribbling ? System.Drawing.Color.Green : System.Drawing.Color.Yellow);
 
 			if (isDribbling)
 			{
+				dribbleSpeedUp++;
 				Vec3 wideNet = bot.TheirGoal.Location;
 				wideNet.x = Utils.Cap(Ball.Location.x, -750, 750);
 
 				Car closestEnemy = Utils.GetClosestEnemy(bot, bot.Me.Location);
-				bool enemyChallenging = closestEnemy.HasJumped && MathF.Abs(Ball.Velocity.z) < 75 && closestEnemy.Location.FlatDist(Ball.Location) < 850;
-				if (enemyChallenging || wideNet.Dist(bot.Me.Location) < 850f)
+				bool enemyFacingBall = closestEnemy.Velocity.Normalize().Dot(closestEnemy.Location.Direction(Ball.Location)) > 0.6f;
+				bool enemyChallenging = (closestEnemy.HasJumped || closestEnemy.Location.z > 120f) && MathF.Abs(Ball.Velocity.z) < 75 && closestEnemy.Location.FlatDist(Ball.Location) < 1550 && enemyFacingBall;
+				if (enemyChallenging) //|| wideNet.Dist(bot.Me.Location) < 850f)
 				{
 					//SetBallPos(WhereBallShouldBe, bot);
 					bot.Action = new Dodge((toNetDir.Flatten() + Vec3.Up * 200).Normalize());
@@ -119,6 +128,9 @@ namespace RedUtils
 				// Catch
 				//CarryWithOffset(-Ball.Velocity.Normalize() * 5, bot);
 				CarryWithOffset(toNetDir.FlatNorm() * 20, bot);
+				dribbleSpeedUp -= 0.1f;
+				if (dribbleSpeedUp < 0)
+					dribbleSpeedUp = 0;
 			}
 				
 		}
@@ -184,13 +196,14 @@ namespace RedUtils
 			BallSlice targetSlice = PredictDribbleSlice(120f);
 
 			Vec3 offset = (targetLocation - Ball.Location).Flatten();
-			offset.y *= 1.8f;
+			offset.y *= 1.8f; // 1.8f;
 			offset = offset.FlatNorm();
 			offset *= Utils.Cap(bot.Me.Boost, 40, 60);
 			offset.y *= Utils.Cap(bot.Me.Velocity.Length() / 1000, 1, 2);
-			offset.x *= Utils.Cap(bot.Me.Boost, 1, 3);
+			offset.x *= Utils.Cap(bot.Me.Velocity.Length() / 1000, 1, 1.5f);
+			offset.y += -Utils.Cap(dribbleSpeedUp / (2f), 0, 70);
 			CarryWithOffset(offset, bot);
-			
+
 		}
 		private void CarryWithOffset(Vec3 offset, RUBot bot)
 		{
@@ -245,7 +258,7 @@ namespace RedUtils
 
 			if (targetSpeed < 0f)
 			{
-				bot.Controller.Throttle = -1f;
+				bot.Controller.Throttle = -1;
 			}
 			else if (speed < targetSpeed)
 			{

@@ -37,7 +37,7 @@ namespace Bot
 			Vec3 ToNet = TheirGoal.Location - Me.Location;
 			float toNetDot = Me.Forward.Dot(ToNet);
 
-			Renderer.Text2D($"ToBall: {toBallDot}, ToNet: {toNetDot}", new Vec3(0, 170), 2, Color.Violet);
+			Renderer.Text2D($"ToBall: {toBallDot}, ToNet: {toNetDot}, behindBall {Me.Location.Dist(TheirGoal.Location) - Ball.Location.Dist(TheirGoal.Location)}", new Vec3(0, 170), 2, Color.Violet);
 
 			if (ballTrailTimer > ballTrailTime * 120)
 			{
@@ -63,7 +63,7 @@ namespace Bot
 				Action = goingForKickoff ? new Kickoff() : new GetBoost(Me, interruptible: false); // if we aren't going for the kickoff, get boost
 				Action = new Dribble(Me);
 			}
-			else if (Action == null || ((Action is Drive || Action is Arrive) && Action.Interruptible))
+			else if (Action == null || ((Action is Drive) && Action.Interruptible))
 			{
 				float ballToNetDist = Ball.Location.Dist(OurGoal.Location);
 				if (ballToNetDist > 98000)
@@ -125,20 +125,29 @@ namespace Bot
 		}
 		private void TestRun()
 		{
-			Vec3 ToBall = Ball.Location - Me.Location;
-			float toBallDot = Me.Forward.Dot(ToBall);
+			Action = Action is not Dribble ? new Dribble(Me) : Action;
+			//Vec3 ToBall = Ball.Location - Me.Location;
+			//float toBallDot = Me.Forward.Dot(ToBall);
 
-			Vec3 ToNet = TheirGoal.Location - Me.Location;
-			float toNetDot = Me.Forward.Dot(ToNet);
+			//Vec3 ToNet = TheirGoal.Location - Me.Location;
+			//float toNetDot = Me.Forward.Dot(ToNet);
 
-			Renderer.Text2D($"ToBall: {toBallDot}, ToNet: {toNetDot}", new Vec3(0, 170), 2, Color.Violet);
+			//Renderer.Text2D($"ToBall: {toBallDot}, ToNet: {toNetDot}", new Vec3(0, 170), 2, Color.Violet);
 
-			// if behind ball and facing towards opp net
-			if (toBallDot > -0.8 && toNetDot > -0.5)
-				Action = Action is not Dribble ? new Dribble(Me) : Action;
-			else
-				// else drive behind ball
-				Action = new Arrive(Me, OurGoal.Location, ToBall.Normalize());
+			//// if behind ball and facing towards opp net
+			//bool behindBall = Me.Location.Dist(TheirGoal.Location) > Ball.Location.Dist(TheirGoal.Location);
+			//behindBall = Me.Location.Dist(TheirGoal.Location) - Ball.Location.Dist(TheirGoal.Location) > - 1000;
+			//if (behindBall && toNetDot > -0.5)
+			//	Action = Action is not Dribble ? new Dribble(Me) : Action;
+			//else
+			//// else shot the ball
+			//{
+			//	Shot shot = FindShot(DefaultShotCheck, new Target(TheirGoal));
+			//	Action = shot ?? Action ?? new GetBoost(Me, interruptible: true);
+			//}
+
+
+
 			//Shot testShot = FindShot(TestShotCheck, new Target(TheirGoal));
 			//Action = testShot ?? Action ?? new Drive(Me, OurGoal.Location);
 
